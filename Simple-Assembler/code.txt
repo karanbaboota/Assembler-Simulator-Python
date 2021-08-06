@@ -1,0 +1,4 @@
+mov R1 $5
+mov R1 R2
+add R1 R2 R3
+hlt
