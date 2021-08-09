@@ -212,10 +212,10 @@ def parse_D(instruction, words):
 	code = opcode + bin_r1 + bin_mem #check binary memory
 	#load
 	if(opcode == '00100'):
-		reg_dic[r1] = '{0:016b}'.format()
+		reg_dic[r1] = var_dic[words[2]][1]
 	#store
 	if(opcode == '00101'):
-		reg_dic[r1] = '{0:016b}'.format()
+		var_dic[words[2]][1] = reg_dic[r1]
 	print(code)
 #done
 
