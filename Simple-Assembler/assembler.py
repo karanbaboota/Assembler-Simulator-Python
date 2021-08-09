@@ -18,14 +18,15 @@ type_F = {'hlt': '10011'}
 #{var_name : [address(binary), value]}
 var_dic = {}
 
-#{label_name : address(binary)}
+#{label_name : address(decimal))}
 labels = {}
 
 #In order: code -> hlt
 #{address(decimal) : entire instruction(string)}
 #for labels, the label name is not included
 line_dic = {}
-
+#overflow and flag reset leftover
+reg_dic = {0: '0'*16, 1: '0'*16, 2: '0'*16, 3: '0'*16, 4: '0'*16, 5: '0'*16, 6: '0'*16, 'FLAGS': '0'*16}
 
 def pre_parse():
 	var_temp = []
@@ -60,7 +61,7 @@ def pre_parse():
 				quit()
 
 			else:
-				labels[words[0][:-1]] = '{0:08b}'.format(address)
+				labels[words[0][:-1]] = address
 				if(line[-1] == "\n"):
 					line_dic[address] = line[len(words[0])+1:-1]
 				else:
@@ -76,7 +77,7 @@ def pre_parse():
 			address +=1
 
 	for v in var_temp:
-		var_dic[v] = ['{0:08b}'.format(address),0]
+		var_dic[v] = [address, 0]
 		address += 1
 
 	if(address>257):
@@ -84,7 +85,7 @@ def pre_parse():
 		quit()
 
 
-
+#Instructions done , add overflows flag for add and subtract
 def parse_A(instruction, words):
 	opcode = type_A[instruction]
 
@@ -102,12 +103,31 @@ def parse_A(instruction, words):
 	bin_r3 = '{0:03b}'.format(r3)
 
 	code = opcode + '00' + bin_r1 + bin_r2 + bin_r3
+	#add
+	if(opcode == '00000'):
+		reg_dic[r1] = '{0:016b}'.format(int(reg_dic[r2], 2) + int(reg_dic[r3], 2))
+	#subtract
+	elif(opcode == '00001'):
+		reg_dic[r1] = '{0:016b}'.format(int(reg_dic[r2], 2) - int(reg_dic[r3], 2))
+	#multiply
+	elif(opcode == '00110'):
+		reg_dic[r1] = '{0:016b}'.format(int(reg_dic[r2], 2) * int(reg_dic[r3], 2))
+	#bitwise XOR
+	elif(opcode == '01010'):
+		reg_dic[r1] = '{0:016b}'.format(int(reg_dic[r2], 2) ^ int(reg_dic[r3], 2))
+	#bitwise OR
+	elif(opcode == '01011'):
+		reg_dic[r1] = '{0:016b}'.format(int(reg_dic[r2], 2) | int(reg_dic[r3], 2))
+	#bitwise AND
+	elif(opcode == '01100'):
+		reg_dic[r1] = '{0:016b}'.format(int(reg_dic[r2], 2) & int(reg_dic[r3], 2))
 	print(code)
-
+	
+#done
 def parse_B(instruction, words):
 	opcode = type_B[instruction]
 
-	if((words[1][0] == 'R' and words[1][1].isdecimal() and words[2][1:].isdecimal()) == 0):
+	if((words[1][0] == 'R' and words[1][1].isdecimal() and words[2][0] == '$' and words[2][1:].isdecimal()) == 0):
 		print('Invalid syntax: Type B instruction cannot be interpreted in this way')
 		quit()
 
@@ -118,8 +138,19 @@ def parse_B(instruction, words):
 	bin_imm = '{0:08b}'.format(imm)
 
 	code = opcode + bin_r1 + bin_imm
+
+	#right shift
+	if(opcode == '01000'):
+		reg_dic[r1] = '{0:016b}'.format(int(reg_dic[r1], 2) >> imm)
+	#left shift
+	elif(opcode == '01001'):
+		reg_dic[r1] = '{0:016b}'.format(int(reg_dic[r1], 2) << imm)
+	#mov_i
+	elif(opcode == '00010'):
+		reg_dic[r1] = '{0:016b}'.format(imm)
 	print(code)
 
+#divide,compare done; invert tbd
 def parse_C(instruction, words):
 	opcode = type_C[instruction]
 
@@ -134,6 +165,22 @@ def parse_C(instruction, words):
 	bin_r2 = '{0:03b}'.format(r2)
 
 	code = opcode + '00000' + bin_r1 + bin_r2
+
+	#move_r
+	if(opcode == '00011'):
+		reg_dic[r1] = reg_dic[r2]
+	#divide: r0 = quotient, r1 = remainder
+	elif(opcode == '00111'):
+		reg_dic[0] = '{0:016b}'.format(int(reg_dic[r1], 2) // int(reg_dic[r2], 2))
+		reg_dic[1] = '{0:016b}'.format(int(reg_dic[r1], 2) % int(reg_dic[r2], 2))
+	#invert - 8 bits or 16?
+	elif(opcode == '01101'):
+		reg_dic[r1] = '{0:016b}'.format(~int(reg_dic[r2][8:], 2))
+	#compare
+	elif(opcode == '01110'):
+		reg_dic['FLAGS'] = '0'*13 +  str(int(int(reg_dic[r1],2) < int(reg_dic[r2],2)))
+		reg_dic['FLAGS'] = reg_dic['FLAGS'] + str(int(int(reg_dic[r1],2) > int(reg_dic[r2],2)))	
+		reg_dic['FLAGS'] = reg_dic['FLAGS'] + str(int(reg_dic[r1] == reg_dic[r2]))
 	print(code)
 
 #check how memory addresses are given in assembly ->  AS LABELS
@@ -148,10 +195,17 @@ def parse_D(instruction, words):
 	r1 = int(words[1][1])
 	bin_r1 = '{0:03b}'.format(r1)
 
-	bin_mem = var_dic[words[2]][0]
+	bin_mem = '{0:08b}'.format(var_dic[words[2]][0])
 
 	code = opcode + bin_r1 + bin_mem #check binary memory
+	#load
+	if(opcode == '00100'):
+		reg_dic[r1] = '{0:016b}'.format()
+	#store
+	if(opcode == '00101'):
+		reg_dic[r1] = '{0:016b}'.format()
 	print(code)
+#done
 
 def parse_E(instruction, words):
 	opcode = type_E[instruction]
@@ -160,20 +214,39 @@ def parse_E(instruction, words):
 		print('Invalid syntax: Type E instruction cannot be interpreted in this way')
 		quit()
 
-	bin_mem = labels[words[1]]
+	pc = int(labels[words[1]])
+
+	bin_mem = '{0:08b}'.format(pc)
 
 	code = opcode + '000' + bin_mem #check binary memory
 	print(code)
 
+	#unconditional jump
+	if(opcode == '01111'):
+		return pc-1
+	#jump if less than
+	elif(opcode == '10000' and reg_dic['FLAGS'][13] == 1):
+		return pc-1
+	#jump if greater than
+	elif(opcode == '10001' and reg_dic['FLAGS'][14] == 1):
+		return pc-1
+	#jump if equal
+	elif(opcode == '10010' and reg_dic['FLAGS'][15] == 1):
+		return pc-1	
+	
 def parse_F(instruction, words):
 	opcode = type_F[instruction]
+	pc = int(1000)
 	code = opcode + '0'*11
 	print(code)
+	return pc
 
 pre_parse()
 
-for address in line_dic.keys():
-	words = line_dic[address].split()
+print(labels, line_dic)
+pc = 0
+while pc < len(line_dic.keys()):
+	words = line_dic[pc].split()
 
 	if words[0] in type_A:
 		instruction = words[0]
@@ -193,11 +266,11 @@ for address in line_dic.keys():
 
 	elif words[0] in type_E:
 		instruction = words[0]
-		parse_E(instruction, words)
+		pc = parse_E(instruction, words)
 
 	elif words[0] in type_F:
 		instruction = words[0]
-		parse_F(instruction, words)
+		pc = parse_F(instruction, words)
 
 	elif words[0] == 'mov':
 		if words[2][0] == '$':
@@ -207,7 +280,7 @@ for address in line_dic.keys():
 		else:
 			instruction = 'mov_r'
 			parse_C(instruction, words)
-
 	else:
 		print(words[0] + ': ' + "Invalid instruction name!!")
 		quit()
+	pc = pc + 1

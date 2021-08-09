@@ -1,4 +1,7 @@
-mov R1 $5
-mov R1 R2
-add R1 R2 R3
+mov R1 $8
+mov R2 $10
+mov R3 $1
+hello: add R1 R1 R3
+cmp R1 R2
+jlt hello
 hlt
