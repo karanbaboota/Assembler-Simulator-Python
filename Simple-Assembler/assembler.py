@@ -1,6 +1,6 @@
 import sys
 
-f = open('code.txt')
+# f = open('code.txt')
 
 # Dividing the instructions into various types
 type_A = {'add': '00000', 'sub': '00001', 'mul': '00110', 'xor': '01010', 'or': '01011', 'and': '01100'}
@@ -37,7 +37,7 @@ def pre_parse():
 	
 	address = 0
 	line_no = 0
-	for line in f:
+	for line in sys.stdin:
 		if line == "\n":
 		 	continue
 		words = line.split()
@@ -351,4 +351,4 @@ while pc < len(line_dic.keys()):
 		print(str(pc) + ": " + words[0] + ': ' + "Invalid instruction!!")
 		quit()
 	pc = pc + 1
-print(reg_dic)
+# print(reg_dic)
