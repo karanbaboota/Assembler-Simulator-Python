@@ -1,6 +1,6 @@
 import sys
 
-# f = open('code.txt')
+f = open('code.txt')
 
 # Dividing the instructions into various types
 type_A = {'add': '00000', 'sub': '00001', 'mul': '00110', 'xor': '01010', 'or': '01011', 'and': '01100'}
@@ -14,6 +14,10 @@ type_D = {'ld': '00100', 'st':'00101'}
 type_E = {'jmp':'01111', 'jlt': '10000', 'jgt': '10001', 'je': '10010'}
 
 type_F = {'hlt': '10011'}
+
+instruct = ['add','sub','mul','xor','or','and','rs','ls','mov','div','not','cmp','ld','st','jmp','jlt','jgt','je','hlt']
+
+register = ['R0','R1','R2','R3','R4','R5','R6','FLAGS']
 
 #{var_name : [address(binary), value]}
 var_dic = {}
@@ -37,10 +41,24 @@ def pre_parse():
 	
 	address = 0
 	line_no = 0
+	halt = False
+	var_end = False
+
 	for line in sys.stdin:
+		line_no +=1
+
 		if line == "\n":
-		 	continue
+			continue
+
 		words = line.split()
+		if halt == True:
+			print(str(line_no) + ": Syntax Error: hlt instuction must be given in the end.")
+			quit()
+
+		if var_end == True and words[0] == "var":
+			print(str(line_no) + ": Syntax Error: All variables must be declared at the beginning")
+			quit()
+
 		if words[0] == "var":
 
 			if words[1] in var_temp:
@@ -51,11 +69,15 @@ def pre_parse():
 				print(str(line_no) + ": Syntax Error: Variables and labels can't have the same name.")
 				quit()
 
+			elif words[1] in instruct:
+				print(str(line_no) + ": Syntax Error: Mnemonic of the instructions cannot be used as variables")
+				quit()
+
 			else:
 				var_temp.append(words[1])
-
+		
 		elif words[0][-1] == ":":
-			
+			var_end = True
 			if words[0][:-1] in var_temp:
 				print(str(line_no) + ": Syntax Error: Variables and labels can't have the same name.")
 				quit()
@@ -64,22 +86,40 @@ def pre_parse():
 				print(str(line_no) + ": Syntax Error: 2 or more labels cannot have the same name.")
 				quit()
 
+			elif words[0][:-1] in instruct:
+				print(str(line_no) + ": Syntax Error: Mnemonic of the instructions cannot be used as labels")
+				quit()
+
 			else:
 				labels[words[0][:-1]] = address
 				if(line[-1] == "\n"):
 					line_dic[address] = line[len(words[0])+1:-1]
 				else:
 					line_dic[address] = line[len(words[0])+1:]
+
+			if words[1] == 'hlt':
+				var_end = True
+				halt = True
+
 			address += 1
 
 		else:
+			if words[0] == "hlt":
+				var_end = True
+				halt = True
+
+			var_end = True
 			if(line[-1] == "\n"):
 				line_dic[address] = line[:-1]
 			else:
 				line_dic[address] = line
 			
 			address +=1
-		line_no+=1
+		
+
+	if halt == False:
+		print(str(line_no) + ": Syntax Error: The last instruction should be hlt.")
+		quit()
 
 	for v in var_temp:
 		var_dic[v] = [address, 0]
@@ -88,7 +128,6 @@ def pre_parse():
 	if(address>257):
 		print("Error: Number of instructions exceed 256")
 		quit()
-
 
 
 #added overflows flag for add and subtract
@@ -201,7 +240,8 @@ def parse_C(instruction, words):
 
 	if words[2] == 'FLAGS':
 		r2 = 'FLAGS'
-		bin_r2 = '{0:03b}'.format(reg_dic[r2])
+		# bin_r2 = '{0:03b}'.format(reg_dic[r2])
+		bin_r2 = '111'
 
 	else:
 		r2 = int(words[2][1])
@@ -316,18 +356,34 @@ while pc < len(line_dic.keys()):
 
 
 	if words[0] in type_A:
+		if words[1] not in register or words[2] not in register or words[3] not in register:
+			print(str(pc) + ": Syntax Error: Register name does not exist.")
+			quit()
+			
 		instruction = words[0]
 		parse_A(instruction, words)
 
 	elif words[0] in type_B:
+		if words[1] not in register:
+			print(str(pc) + ": Syntax Error: Register name does not exist.")
+			quit()
+
 		instruction = words[0]
 		parse_B(instruction, words)
 
 	elif words[0] in type_C:
+		if words[1] not in register or words[2] not in register:
+			print(str(pc) + ": Syntax Error: Register name does not exist.")
+			quit()
+
 		instruction = words[0]
 		parse_C(instruction, words)
 
 	elif words[0] in type_D:
+		if words[1] not in register:
+			print(str(pc) + ": Syntax Error: Register name does not exist.")
+			quit()
+
 		instruction = words[0]
 		parse_D(instruction, words)
 
@@ -341,10 +397,17 @@ while pc < len(line_dic.keys()):
 
 	elif words[0] == 'mov':
 		if words[2][0] == '$':
+			if words[1] not in register:
+				print(str(pc) + ": Syntax Error: Register name does not exist.")
+				quit()
 			instruction = 'mov_i'
 			parse_B(instruction, words)
 
 		else:
+			if words[1] not in register or words[2] not in register:
+				print(str(pc) + ": Syntax Error: Register name does not exist.")
+				quit()
+
 			instruction = 'mov_r'
 			parse_C(instruction, words)
 	else:
