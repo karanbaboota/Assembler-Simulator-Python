@@ -130,6 +130,7 @@ def pre_parse():
 		quit()
 
 
+
 #added overflows flag for add and subtract
 def parse_A(instruction, words):
 	opcode = type_A[instruction]
@@ -217,6 +218,7 @@ def parse_B(instruction, words):
 	if(opcode == '01000'):
 		reg_dic[r1] = reg_dic[r1] >> imm
 
+
 	#left shift
 	elif(opcode == '01001'):
 		reg_dic[r1] = reg_dic[r1] << imm
@@ -225,6 +227,7 @@ def parse_B(instruction, words):
 	elif(opcode == '00010'):
 		reg_dic[r1] = imm
 	print(code)
+
 
 # INVERT IS LEFT
 def parse_C(instruction, words):
@@ -290,6 +293,7 @@ def parse_D(instruction, words):
 
 	bin_mem = '{0:08b}'.format(var_dic[words[2]][0])
 
+
 	code = opcode + bin_r1 + bin_mem 
 
 	#load
@@ -300,6 +304,7 @@ def parse_D(instruction, words):
 	if(opcode == '00101'):
 		var_dic[words[2]][1] = reg_dic[r1]
 	print(code)
+#done
 
 def parse_E(instruction, words, pc):
 	opcode = type_E[instruction]
@@ -334,16 +339,16 @@ def parse_E(instruction, words, pc):
 	elif(opcode == '10010' and reg_dic['FLAGS'] == 1):
 		reset()
 		return jmploc-1
-
 	return pc
 	
 def parse_F(instruction, words):
 	opcode = type_F[instruction]
+	pc = int(1000)
 	code = opcode + '0'*11
 	print(code)
+	return pc
 
 pre_parse()
-
 
 
 # print(labels, line_dic)
@@ -353,7 +358,6 @@ pc = 0
 
 while pc < len(line_dic.keys()):
 	words = line_dic[pc].split()
-
 
 	if words[0] in type_A:
 		if words[1] not in register or words[2] not in register or words[3] not in register:
@@ -393,7 +397,7 @@ while pc < len(line_dic.keys()):
 
 	elif words[0] in type_F:
 		instruction = words[0]
-		parse_F(instruction, words)
+		pc = parse_F(instruction, words)
 
 	elif words[0] == 'mov':
 		if words[2][0] == '$':
