@@ -1,6 +1,6 @@
 import sys
 
-f = open('code.txt')
+# f = open('code.txt')
 
 # Dividing the instructions into various types
 type_A = {'add': '00000', 'sub': '00001', 'mul': '00110', 'xor': '01010', 'or': '01011', 'and': '01100'}
