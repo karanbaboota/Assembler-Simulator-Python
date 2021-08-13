@@ -1,6 +1,6 @@
 import sys
 
-f = open('code.txt')
+# f = open('code.txt')
 
 # Dividing the instructions into various types
 type_A = {'add': '00000', 'sub': '00001', 'mul': '00110', 'xor': '01010', 'or': '01011', 'and': '01100'}
@@ -17,7 +17,7 @@ type_F = {'hlt': '10011'}
 
 instruct = ['add','sub','mul','xor','or','and','rs','ls','mov','div','not','cmp','ld','st','jmp','jlt','jgt','je','hlt']
 
-register = ['R0','R1','R2','R3','R4','R5','R6','FLAGS']
+register = ['R0','R1','R2','R3','R4','R5','R6']
 
 #{var_name : [address(binary), value]}
 var_dic = {}
@@ -30,11 +30,11 @@ labels = {}
 #for labels, the label name is not included
 line_dic = {}
 
-reg_dic = {0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 'FLAGS': 0}
-# FLAGS: E = 1, G = 2, L = 4, V = 8
+# stores line no of instructions present in line_dic
+code_line = []
 
-def reset():
-	reg_dic['FLAGS'] = 0
+# output list
+bin_file = []
 
 def pre_parse():
 	var_temp = []
@@ -97,7 +97,7 @@ def pre_parse():
 				else:
 					line_dic[address] = line[len(words[0])+1:]
 
-			if words[1] == 'hlt':
+			if len(words)>1 and words[1] == 'hlt':
 				var_end = True
 				halt = True
 
@@ -116,6 +116,8 @@ def pre_parse():
 			
 			address +=1
 		
+		if words[0] != "var":
+			code_line.append(line_no)
 
 	if halt == False:
 		print(str(line_no) + ": Syntax Error: The last instruction should be hlt.")
@@ -130,12 +132,11 @@ def pre_parse():
 		quit()
 
 
-#added overflows flag for add and subtract
 def parse_A(instruction, words):
 	opcode = type_A[instruction]
 
 	if((words[1][0] == 'R' and words[2][0] == 'R' and words[3][0] == 'R') == 0):
-		print(str(pc) + ': Invalid syntax: Type B instruction cannot be interpreted in this way')
+		print(str(code_line[pc]) + ': Invalid syntax: Type B instruction cannot be interpreted in this way')
 		quit()
 
 	r1 = int(words[1][1])
@@ -149,59 +150,20 @@ def parse_A(instruction, words):
 
 	code = opcode + '00' + bin_r1 + bin_r2 + bin_r3
 
-	#add
-	if(opcode == '00000'):
-		reg_dic[r1] = reg_dic[r2] + reg_dic[r3]
-
-		#Overflow for addition
-		if reg_dic[r1] > 255:
-			reg_dic[r1] = 0
-			reg_dic['FLAGS'] = 8
-	
-	#subtract
-	elif(opcode == '00001'):
-		reg_dic[r1] = reg_dic[r2] - reg_dic[r3]
-
-		#Overflow for subtraction
-		if reg_dic[r1] < 0:
-			reg_dic[r1] = 0
-			reg_dic['FLAGS'] = 8
-		
-	#multiply
-	elif(opcode == '00110'):
-		reg_dic[r1] = reg_dic[r2] * reg_dic[r3]
-
-		#Overflow for Multiplication
-		if reg_dic[r1] > 255:
-			reg_dic[r1] = 0
-			reg_dic['FLAGS'] = 8
-    	
-	#bitwise XOR
-	elif(opcode == '01010'):
-		reg_dic[r1] = reg_dic[r2] ^ reg_dic[r3]
-
-	#bitwise OR
-	elif(opcode == '01011'):
-		reg_dic[r1] = reg_dic[r2] | reg_dic[r3]
-
-	#bitwise AND
-	elif(opcode == '01100'):
-		reg_dic[r1] = reg_dic[r2] & reg_dic[r3]
-
-	print(code)
+	bin_file.append(code)
 	
 def parse_B(instruction, words):
 	opcode = type_B[instruction]
 
 	if((words[1][0] == 'R' and words[1][1].isdecimal() and words[2][0] == '$' and words[2][1:].isdecimal()) == 0):
-		print(str(pc) + ': Invalid syntax: Type B instruction cannot be interpreted in this way')
+		print(str(code_line[pc]) + ': Invalid syntax: Type B instruction cannot be interpreted in this way')
 		quit()
 
 	# Limits for immediate values
 	if words[2][0] == '$':
 			immediate = int(words[2][1:])
 			if immediate < 0 or immediate > 255:
-				print(str(pc) + ": Immediate value out of bounds (0 -> 255)")
+				print(str(code_line[pc]) + ": Immediate value out of bounds (0 -> 255)")
 				quit()
 
 
@@ -213,36 +175,21 @@ def parse_B(instruction, words):
 
 	code = opcode + bin_r1 + bin_imm
 
-	#right shift
-	if(opcode == '01000'):
-		reg_dic[r1] = reg_dic[r1] >> imm
+	bin_file.append(code)
 
-
-	#left shift
-	elif(opcode == '01001'):
-		reg_dic[r1] = reg_dic[r1] << imm
-
-	#mov_i
-	elif(opcode == '00010'):
-		reg_dic[r1] = imm
-	print(code)
-
-
-# INVERT IS LEFT
 def parse_C(instruction, words):
 	opcode = type_C[instruction]
 
 	if((words[1][0] == 'R' and words[1][1].isdecimal() and words[2][0] == 'R' and (words[2][1].isdecimal()) == 0 and words[2] != 'FLAGS')):
-		print(str(pc) + ': Invalid syntax: Type C instruction cannot be interpreted in this way')
+		print(str(code_line[pc]) + ': Invalid syntax: Type C instruction cannot be interpreted in this way')
 		quit()
-
 
 	r1 = int(words[1][1])
 	bin_r1 = '{0:03b}'.format(r1)
 
 	if words[2] == 'FLAGS':
 		r2 = 'FLAGS'
-		# bin_r2 = '{0:03b}'.format(reg_dic[r2])
+		
 		bin_r2 = '111'
 
 	else:
@@ -250,41 +197,18 @@ def parse_C(instruction, words):
 		bin_r2 = '{0:03b}'.format(r2)
 
 	code = opcode + '00000' + bin_r1 + bin_r2
-
-	#move_r
-	if(opcode == '00011'):
-		reg_dic[r1] = reg_dic[r2]
-
-	#divide: r0 = quotient, r1 = remainder
-	elif(opcode == '00111'):
-		reg_dic[0] = reg_dic[r1] // reg_dic[r2]
-		reg_dic[1] = reg_dic[r1] % reg_dic[r2]
-
-	#invert - 8 bits or 16? --> TBD
-	elif(opcode == '01101'):
-		print(reg_dic[r1], reg_dic[r2])
-		# reg_dic[r1] = '{0:016b}'.format(~int(reg_dic[r2][8:], 2))
-		reg_dic[r1] = ~(reg_dic[r2])
-
-	#compare
-	elif(opcode == '01110'):
-		if (reg_dic[r1] < reg_dic[r2]) :
-			reg_dic['FLAGS'] = 4
-		elif (reg_dic[r1] > reg_dic[r2]) :
-			reg_dic['FLAGS'] = 2
-		elif (reg_dic[r1] == reg_dic[r2]) :
-			reg_dic['FLAGS'] = 1
-	print(code)
+	
+	bin_file.append(code)
 
 def parse_D(instruction, words):
 	opcode = type_D[instruction]
 
 	if((words[1][0] == 'R' and words[1][1].isdecimal()) == 0):
-		print(str(pc) + ': Invalid syntax: Type D instruction cannot be interpreted in this way')
+		print(str(code_line[pc]) + ': Invalid syntax: Type D instruction cannot be interpreted in this way')
 		quit()
 
 	if(words[2] not in var_dic.keys()):
-		print(str(pc) + ': Variable ' + words[2] + ' not found')
+		print(str(code_line[pc]) + ': Variable ' + words[2] + ' not found')
 		quit()
 
 	r1 = int(words[1][1])
@@ -292,24 +216,15 @@ def parse_D(instruction, words):
 
 	bin_mem = '{0:08b}'.format(var_dic[words[2]][0])
 
-
 	code = opcode + bin_r1 + bin_mem 
 
-	#load
-	if(opcode == '00100'):
-		reg_dic[r1] = var_dic[words[2]][1]
+	bin_file.append(code)
 
-	#store
-	if(opcode == '00101'):
-		var_dic[words[2]][1] = reg_dic[r1]
-	print(code)
-#done
-
-def parse_E(instruction, words, pc):
+def parse_E(instruction, words):
 	opcode = type_E[instruction]
 
 	if((words[1] in labels.keys()) == 0):
-		print(str(pc) + ': Invalid syntax: Type E instruction cannot be interpreted in this way')
+		print(str(code_line[pc]) + ': Invalid syntax: Type E instruction cannot be interpreted in this way')
 		quit()
 
 	jmploc = labels[words[1]]
@@ -317,74 +232,62 @@ def parse_E(instruction, words, pc):
 	bin_mem = '{0:08b}'.format(jmploc)
 
 	code = opcode + '000' + bin_mem 
-	print(code)
-
-	#unconditional jump
-	if(opcode == '01111'):
-		reset()
-		return jmploc-1
-
-	#jump if less than
-	elif(opcode == '10000' and reg_dic['FLAGS'] == 4):
-		reset()
-		return jmploc-1
-
-	#jump if greater than
-	elif(opcode == '10001' and reg_dic['FLAGS'] == 2):
-		reset()
-		return jmploc-1
-
-	#jump if equal
-	elif(opcode == '10010' and reg_dic['FLAGS'] == 1):
-		reset()
-		return jmploc-1
-	return pc
+	bin_file.append(code)	
 	
-def parse_F(instruction, words):
+def parse_F(instruction):
 	opcode = type_F[instruction]
-	pc = int(1000)
 	code = opcode + '0'*11
-	print(code)
-	return pc
+	bin_file.append(code)
 
 pre_parse()
 
-
-# print(labels, line_dic)
-pc = 0
-
-# ADD AN ERROR FOR HALT STATEMENTS
-
-while pc < len(line_dic.keys()):
+for pc in range(len(line_dic.keys())):
 	words = line_dic[pc].split()
 
 	if words[0] in type_A:
-		if words[1] not in register or words[2] not in register or words[3] not in register:
-			print(str(pc) + ": Syntax Error: Register name does not exist.")
+		
+		if words[1] == "FLAGS" or words[2] == "FLAGS" or words[3] == "FLAGS":
+			print(str(code_line[pc]) + ": Syntax Error: Illegal use of FLAGS register") 
 			quit()
-			
+
+		if words[1] not in register or words[2] not in register or words[3] not in register:
+			print(str(code_line[pc]) + ": Syntax Error: Register name does not exist.")
+			quit()
+
 		instruction = words[0]
 		parse_A(instruction, words)
 
 	elif words[0] in type_B:
+		if words[1] == "FLAGS":
+			print(str(code_line[pc]) + ": Syntax Error: Illegal use of FLAGS register") 
+			quit()
+		
 		if words[1] not in register:
-			print(str(pc) + ": Syntax Error: Register name does not exist.")
+			print(str(code_line[pc]) + ": Syntax Error: Register name does not exist.")
 			quit()
 
 		instruction = words[0]
 		parse_B(instruction, words)
 
 	elif words[0] in type_C:
+		if words[1] == "FLAGS" or words[2] == "FLAGS":
+			print(str(code_line[pc]) + ": Syntax Error: Illegal use of FLAGS register") 
+			quit()
+
 		if words[1] not in register or words[2] not in register:
-			print(str(pc) + ": Syntax Error: Register name does not exist.")
+			print(str(code_line[pc]) + ": Syntax Error: Register name does not exist.")
 			quit()
 
 		instruction = words[0]
 		parse_C(instruction, words)
 
 	elif words[0] in type_D:
+		if words[1] == "FLAGS":
+			print(str(code_line[pc]) + ": Syntax Error: Illegal use of FLAGS register") 
+			quit()
+
 		if words[1] not in register:
-			print(str(pc) + ": Syntax Error: Register name does not exist.")
+			print(str(code_line[pc]) + ": Syntax Error: Register name does not exist.")
 			quit()
 
 		instruction = words[0]
@@ -392,29 +295,29 @@ while pc < len(line_dic.keys()):
 
 	elif words[0] in type_E:
 		instruction = words[0]
-		pc = parse_E(instruction, words, pc)
+		pc = parse_E(instruction, words)
 
 	elif words[0] in type_F:
 		instruction = words[0]
-		pc = parse_F(instruction, words)
+		pc = parse_F(instruction)
 
 	elif words[0] == 'mov':
 		if words[2][0] == '$':
 			if words[1] not in register:
-				print(str(pc) + ": Syntax Error: Register name does not exist.")
+				print(str(code_line[pc]) + ": Syntax Error: Register name does not exist.")
 				quit()
 			instruction = 'mov_i'
 			parse_B(instruction, words)
 
 		else:
-			if words[1] not in register or words[2] not in register:
-				print(str(pc) + ": Syntax Error: Register name does not exist.")
+			if (words[1] not in register and words[1] != "FLAGS") or (words[2] not in register and words[2] != "FLAGS"):
+				print(str(code_line[pc]) + ": Syntax Error: Register name does not exist.")
 				quit()
 
 			instruction = 'mov_r'
 			parse_C(instruction, words)
 	else:
-		print(str(pc) + ": " + words[0] + ': ' + "Invalid instruction!!")
+		print(str(code_line[pc]) + ": " + words[0] + ': ' + "Invalid instruction!!")
 		quit()
-	pc = pc + 1
-# print(reg_dic)
+	
+print(*bin_file, sep = '\n')
