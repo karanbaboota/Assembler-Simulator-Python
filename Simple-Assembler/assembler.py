@@ -207,8 +207,12 @@ def parse_D(instruction, words):
 		print(str(code_line[pc]) + ': Invalid syntax: Type D instruction cannot be interpreted in this way')
 		quit()
 
+	if(words[2] in labels.keys()):
+		print(str(code_line[pc]) + ': Syntax Error: Labels cannot be used as variables.')
+		quit()
+
 	if(words[2] not in var_dic.keys()):
-		print(str(code_line[pc]) + ': Variable ' + words[2] + ' not found')
+		print(str(code_line[pc]) + ': Variable ' + words[2] + ' is not defined')
 		quit()
 
 	r1 = int(words[1][1])
@@ -223,8 +227,12 @@ def parse_D(instruction, words):
 def parse_E(instruction, words):
 	opcode = type_E[instruction]
 
+	if(words[1] in var_dic.keys()):
+		print(str(code_line[pc]) + ': Syntax Error: Variables cannot be used as labels.')
+		quit()
+
 	if((words[1] in labels.keys()) == 0):
-		print(str(code_line[pc]) + ': Invalid syntax: Type E instruction cannot be interpreted in this way')
+		print(str(code_line[pc]) + ': Syntax Error: The label ' + words[1] + ' is not defined.')
 		quit()
 
 	jmploc = labels[words[1]]
