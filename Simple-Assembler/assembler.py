@@ -130,7 +130,6 @@ def pre_parse():
 		quit()
 
 
-
 #added overflows flag for add and subtract
 def parse_A(instruction, words):
 	opcode = type_A[instruction]
