@@ -22,16 +22,22 @@ Mem_dic = {}
 f = open("code.txt")
 
 counter = 0
+
 def registerOutput(pc):
-    print('{0:08b}'.format(pc))
+    print('{0:08b}'.format(pc), end = " ")
     for line in (reg_dic.keys()):
-        print('00000000' + format(reg_dic[line], '08b'))
+        print('00000000' + format(reg_dic[line], '08b'), end = " ")
+    print()
 
 def flagReset():
     reg_dic['FLAGS'] = 0
 
-for line in f:
-    Mem_dic[counter] = line
+for line in sys.stdin:
+# for line in f:
+    if line[0:5] == '10011':
+        Mem_dic[counter] = line
+    else:
+        Mem_dic[counter] = line[0:-1]
     counter += 1
 
 programCounter = 0
@@ -129,6 +135,11 @@ while programCounter < len(Mem_dic.keys()):
 
         r2 = int(line[13:16], 2)
 
+        if(r1 == 7):
+            r1 = 'FLAGS'
+        if(r2 == 7):
+            r2 = 'FLAGS'
+
         #move_r
         if(opcode == '00011'):
             reg_dic[r1] = reg_dic[r2]
@@ -168,9 +179,11 @@ while programCounter < len(Mem_dic.keys()):
             reg_dic[r1] = Mem_dic[mem]
 
         elif opcode == '00101':   
-            Mem_dic[mem] = reg_dic[r1]
+            Mem_dic[mem] = '0'*8 + '{0:08b}'.format(reg_dic[r1])
 
+        flagReset()
         registerOutput(programCounter)
+
     
     #check for Type_E
     elif opcode in type_E:
@@ -195,11 +208,21 @@ while programCounter < len(Mem_dic.keys()):
             if reg_dic['FLAGS'] == 1:
                 programCounter = int(mem, 2) - 1
 
+        flagReset()
         registerOutput(programCounter)
 
     elif opcode in type_F:
+        flagReset()
         registerOutput(programCounter)
         programCounter = 1000
 
     programCounter += 1
     cycle += 1
+
+lines = 0
+for i in Mem_dic.values():
+    lines +=1
+    print(i)
+
+for i in range(256-lines):
+    print('0'*16)
