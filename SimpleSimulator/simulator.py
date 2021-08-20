@@ -189,7 +189,8 @@ while programCounter < len(Mem_dic.keys()):
     
     #check for Type_E
     elif opcode in type_E:
-        mem = int(line[8:16], 2)
+        # mem = int(line[8:16], 2)
+        mem = line[8:16]
 
         #unconditional jump
         if opcode == '01111':
