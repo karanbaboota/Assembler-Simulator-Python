@@ -147,8 +147,10 @@ while programCounter < len(Mem_dic.keys()):
 
         #divide: r0 = quotient, r1 = remainder
         elif(opcode == '00111'):
-            reg_dic[0] = reg_dic[r1] // reg_dic[r2]
-            reg_dic[1] = reg_dic[r1] % reg_dic[r2]
+            temp1 = reg_dic[r1] // reg_dic[r2]
+            temp2 = reg_dic[r1] % reg_dic[r2]
+            reg_dic[0] = temp1
+            reg_dic[1] = temp2
             flagReset()
 
         #invert - 8 bits or 16? --> TBD
