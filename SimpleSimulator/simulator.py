@@ -178,7 +178,10 @@ while programCounter < len(Mem_dic.keys()):
         mem = int(line[8:16], 2)
 
         if opcode == '00100':
-            reg_dic[r1] = Mem_dic[mem]
+            if mem in Mem_dic.keys():
+                reg_dic[r1] = Mem_dic[mem]
+            else:
+                reg_dic[r1] = 0
 
         elif opcode == '00101':   
             Mem_dic[mem] = '0'*8 + '{0:08b}'.format(reg_dic[r1])
