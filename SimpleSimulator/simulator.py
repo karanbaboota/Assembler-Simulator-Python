@@ -31,7 +31,7 @@ def registerOutput(pc):
         print(format(reg_dic[line], '016b'), end = " ")
     print()
     cycle_list.append(cycle)
-    mem_list.append(pc);
+    mem_list.append(pc)
 
 def flagReset():
     reg_dic['FLAGS'] = 0
@@ -204,28 +204,29 @@ while programCounter < len(Mem_dic.keys()):
     elif opcode in type_E:
         # mem = int(line[8:16], 2)
         mem = line[8:16]
-
+        temp = programCounter
         #unconditional jump
         if opcode == '01111':
-            programCounter = int(mem, 2) - 1
+            temp = int(mem, 2) - 1
 
         #jump if less than
         elif opcode == '10000':
             if reg_dic['FLAGS'] == 4:
-                programCounter = int(mem, 2) - 1
+                temp = int(mem, 2) - 1
         
         #jump if greater than
         elif opcode == '10001':
             if reg_dic['FLAGS'] == 2:
-                programCounter = int(mem, 2) - 1
+                temp = int(mem, 2) - 1
         
         #jump if equal
         elif opcode == '10010':
             if reg_dic['FLAGS'] == 1:
-                programCounter = int(mem, 2) - 1
+                temp = int(mem, 2) - 1
 
         flagReset()
         registerOutput(programCounter)
+        programCounter = temp
 
     elif opcode in type_F:
         flagReset()
