@@ -179,7 +179,8 @@ while programCounter < len(Mem_dic.keys()):
 
         if opcode == '00100':
             if mem in Mem_dic.keys():
-                reg_dic[r1] = Mem_dic[mem]
+                reg_dic[r1] = int(Mem_dic[mem],2)
+
             else:
                 reg_dic[r1] = 0
 
