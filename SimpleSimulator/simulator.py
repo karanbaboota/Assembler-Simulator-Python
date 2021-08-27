@@ -1,4 +1,6 @@
 import sys
+import matplotlib.pyplot as plt
+import numpy as np
 
 # Dividing the instructions into various types
 type_A = {'00000', '00001', '00110', '01010', '01011', '01100'}
@@ -26,8 +28,10 @@ counter = 0
 def registerOutput(pc):
     print('{0:08b}'.format(pc), end = " ")
     for line in (reg_dic.keys()):
-        print('00000000' + format(reg_dic[line], '08b'), end = " ")
+        print(format(reg_dic[line], '016b'), end = " ")
     print()
+    cycle_list.append(cycle)
+    mem_list.append(pc);
 
 def flagReset():
     reg_dic['FLAGS'] = 0
@@ -44,6 +48,8 @@ programCounter = 0
 
 # cycle is for the bonus q
 cycle = 0
+cycle_list = []
+mem_list = []
 
 while programCounter < len(Mem_dic.keys()):
 
@@ -63,8 +69,8 @@ while programCounter < len(Mem_dic.keys()):
         if(opcode == '00000'):
             reg_dic[r1] = reg_dic[r2] + reg_dic[r3]
             #Overflow for addition
-            if reg_dic[r1] > 255:
-                reg_dic[r1] = reg_dic[r1] % 256
+            if reg_dic[r1] > 65535:
+                reg_dic[r1] = reg_dic[r1] % (256*256)
                 reg_dic['FLAGS'] = 8
             else:
                 flagReset()
@@ -74,7 +80,7 @@ while programCounter < len(Mem_dic.keys()):
 
             #Overflow for subtraction
             if reg_dic[r1] < 0:
-                reg_dic[r1] = reg_dic[r1] % 256
+                reg_dic[r1] = reg_dic[r1] % (256*256)
                 reg_dic['FLAGS'] = 8
             else:
                 flagReset()
@@ -83,8 +89,8 @@ while programCounter < len(Mem_dic.keys()):
             reg_dic[r1] = reg_dic[r2] * reg_dic[r3]
 
             #Overflow for Multiplication
-            if reg_dic[r1] > 255:
-                reg_dic[r1] = reg_dic[r1] % 256
+            if reg_dic[r1] > 65535:
+                reg_dic[r1] = reg_dic[r1] % (256*256)
                 reg_dic['FLAGS'] = 8
             else:
                 flagReset()
@@ -119,7 +125,7 @@ while programCounter < len(Mem_dic.keys()):
 
         #left shift
         elif(opcode == '01001'):
-            reg_dic[r1] = (reg_dic[r1] << imm) %256
+            reg_dic[r1] = (reg_dic[r1] << imm) % (256*256)
             flagReset()
 
         #mov_i
@@ -187,6 +193,9 @@ while programCounter < len(Mem_dic.keys()):
         elif opcode == '00101':   
             Mem_dic[mem] = '0'*8 + '{0:08b}'.format(reg_dic[r1])
 
+        cycle_list.append(cycle)
+        mem_list.append(mem)
+
         flagReset()
         registerOutput(programCounter)
 
@@ -233,3 +242,12 @@ for i in Mem_dic.values():
 
 for i in range(256-lines):
     print('0'*16)
+
+#Plotting for the bonus
+x = np.array(cycle_list)
+y = np.array(mem_list)
+
+plt.xlabel("Cycle number")
+plt.ylabel("Memory Address")
+plt.scatter(x, y, color = 'red')
+plt.savefig('bonus.png')
