@@ -34,9 +34,9 @@ def registerOutput(pc):
 def flagReset():
     reg_dic['FLAGS'] = 0
 
-# for line in sys.stdin:
 halt = True
-for line in f:
+# for line in f:
+for line in sys.stdin:
 
 	if(len(line) <= 17 and line[0:15]!='0'*16):
 	    if line[0:5] == '10011':
