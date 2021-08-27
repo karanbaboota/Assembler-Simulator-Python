@@ -80,7 +80,7 @@ while programCounter < len(Mem_dic.keys()):
 
             #Overflow for subtraction
             if reg_dic[r1] < 0:
-                reg_dic[r1] = reg_dic[r1] % (256*256)
+                reg_dic[r1] = 0
                 reg_dic['FLAGS'] = 8
             else:
                 flagReset()
