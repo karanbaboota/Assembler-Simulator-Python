@@ -15,7 +15,7 @@ type_E = {'jmp':'01111', 'jlt': '10000', 'jgt': '10001', 'je': '10010'}
 
 type_F = {'hlt': '10011'}
 
-instruct = ['add','sub','mul','xor','or','and','rs','ls','mov','div','not','cmp','ld','st','jmp','jlt','jgt','je','hlt']
+instruct = ['add','sub','mul','xor','or','and','rs','ls','mov','div','not','cmp','ld','st','jmp','jlt','jgt','je','hlt','var']
 
 register = ['R0','R1','R2','R3','R4','R5','R6']
 
@@ -60,6 +60,14 @@ def pre_parse():
 			quit()
 
 		if words[0] == "var":
+			if len(words) != 2:
+				print(str(line_no) + ": Syntax Error: Illegal instruction")
+				quit()
+
+			for i in words[1]:
+				if i.isalnum() == False and i!='_':
+					print(str(line_no) + ": Syntax Error: Illegal variable name")
+					quit()
 
 			if words[1] in var_temp:
 				print(str(line_no) + ": Syntax Error: 2 or more variables cannot have the same name.")
@@ -78,6 +86,12 @@ def pre_parse():
 		
 		elif words[0][-1] == ":":
 			var_end = True
+			
+			for i in words[0][:-1]:
+				if i.isalnum() == False and i!='_':
+					print(str(line_no) + ": Syntax Error: Illegal variable name")
+					quit()
+
 			if words[0][:-1] in var_temp:
 				print(str(line_no) + ": Syntax Error: Variables and labels can't have the same name.")
 				quit()
@@ -179,6 +193,9 @@ def parse_B(instruction, words):
 
 def parse_C(instruction, words):
 	opcode = type_C[instruction]
+	if words[1] == 'FLAGS':
+		print(str(code_line[pc]) + ': Invalid syntax: Type C instruction cannot be interpreted in this way')
+		quit()
 
 	if((words[1][0] == 'R' and words[1][1].isdecimal() and words[2][0] == 'R' and (words[2][1].isdecimal()) == 0 and words[2] != 'FLAGS')):
 		print(str(code_line[pc]) + ': Invalid syntax: Type C instruction cannot be interpreted in this way')
@@ -251,9 +268,14 @@ pre_parse()
 
 for pc in range(len(line_dic.keys())):
 	words = line_dic[pc].split()
+	if len(words) == 0:
+		print(str(code_line[pc]) + ": Syntax Error: Illegal instruction")
+		quit()
 
 	if words[0] in type_A:
-		
+		if len(words) != 4:
+			print(str(code_line[pc]) + ": Syntax Error: Illegal instruction")
+			quit()
 		if words[1] == "FLAGS" or words[2] == "FLAGS" or words[3] == "FLAGS":
 			print(str(code_line[pc]) + ": Syntax Error: Illegal use of FLAGS register") 
 			quit()
@@ -266,6 +288,10 @@ for pc in range(len(line_dic.keys())):
 		parse_A(instruction, words)
 
 	elif words[0] in type_B:
+		if len(words) != 3:
+			print(str(code_line[pc]) + ": Syntax Error: Illegal instruction")
+			quit()
+
 		if words[1] == "FLAGS":
 			print(str(code_line[pc]) + ": Syntax Error: Illegal use of FLAGS register") 
 			quit()
@@ -278,6 +304,10 @@ for pc in range(len(line_dic.keys())):
 		parse_B(instruction, words)
 
 	elif words[0] in type_C:
+		if len(words) != 3:
+			print(str(code_line[pc]) + ": Syntax Error: Illegal instruction")
+			quit()
+
 		if words[1] == "FLAGS" or words[2] == "FLAGS":
 			print(str(code_line[pc]) + ": Syntax Error: Illegal use of FLAGS register") 
 			quit()
@@ -290,6 +320,10 @@ for pc in range(len(line_dic.keys())):
 		parse_C(instruction, words)
 
 	elif words[0] in type_D:
+		if len(words) != 3:
+			print(str(code_line[pc]) + ": Syntax Error: Illegal instruction")
+			quit()
+
 		if words[1] == "FLAGS":
 			print(str(code_line[pc]) + ": Syntax Error: Illegal use of FLAGS register") 
 			quit()
@@ -302,18 +336,30 @@ for pc in range(len(line_dic.keys())):
 		parse_D(instruction, words)
 
 	elif words[0] in type_E:
+		if len(words) != 2:
+			print(str(code_line[pc]) + ": Syntax Error: Illegal instruction")
+			quit()
+			
 		instruction = words[0]
 		pc = parse_E(instruction, words)
 
 	elif words[0] in type_F:
+		if len(words) != 1:
+			print(str(code_line[pc]) + ": Syntax Error: Illegal instruction")
+			quit()
 		instruction = words[0]
 		pc = parse_F(instruction)
 
 	elif words[0] == 'mov':
+		if len(words) != 3:
+			print(str(code_line[pc]) + ": Syntax Error: Illegal instruction")
+			quit()
+
 		if words[2][0] == '$':
 			if words[1] not in register:
 				print(str(code_line[pc]) + ": Syntax Error: Register name does not exist.")
 				quit()
+
 			instruction = 'mov_i'
 			parse_B(instruction, words)
 
